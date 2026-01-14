@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pepldm"
+version = "1.0.0"
+description = "High-PepBinder"
+readme = "README.md"
+authors = [{ name = "Qingyi Mao", email = "mqyii@outlook.com" }, { name = "Silong Zhai", email = "zhaisilong@outlook.com" }]
+license = { text = "MIT" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.5.0",
+    "ipykernel",
+    "click",
+    "loguru",
+    "pytorch-lightning>=2.5.0",
+    "hydra-core",
+    "transformers",
+    "datasets",
+    "einops",
+    "huggingface-hub",
+    "biopython",
+    "biotite",
+    "scipy",
+    "einx",
+    "trifast",
+    "cuequivariance_ops_cu12>=0.5.0",
+    "cuequivariance_ops_torch_cu12>=0.5.0",
+    "cuequivariance_torch>=0.5.0",
+    "lightning",
+    "litdata",
+    "p_tqdm",
+    "pytorch-metric-learning",
+    "rich",
+    "rdkit",
+    "pyrootutils",
+    "chemprop",
+    "nvidia-ml-py"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pylint",
+    "python-dotenv",
+    "commitizen",
+    "chromadb",
+]
+doc = [
+    "jupyter-book==2.*",
+    "mystmd"
+]
+serve = [
+    "litserve",
+    "pydantic",
+    "sqlalchemy",
+    "sqlmodel",
+    "requests",
+]
+
+[project.urls]
+Homepage = "https://github.com/mqyii/High-PepBinder"
+
+[project.scripts]
+pepldm = "pepldm.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pepldm"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
