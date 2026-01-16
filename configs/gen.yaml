@@ -1,0 +1,14 @@
+name: pepldm
+stage: gen
+log_dir: ./logs/${stage}
+seed: 92
+device: 2
+
+model_path: path/to/your/model.ckpt
+
+lightning_module:
+  load_from_esmc: false
+
+hydra:
+  run:
+    dir: ${log_dir}/${name}

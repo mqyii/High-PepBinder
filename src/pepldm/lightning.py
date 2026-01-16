@@ -10,8 +10,8 @@ from torchmetrics import (
     F1Score,
 )
 from loguru import logger
-from astra.lightning.base import BaseLightningModule
-from astra.models.esmc import ESMCModel, ESMCConfig
+from .base import BaseLightningModule
+from .esmc import ESMCModel, ESMCConfig
 
 
 class DiffusionGenerationMixin:

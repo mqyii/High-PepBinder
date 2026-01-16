@@ -15,7 +15,7 @@ pip install .
 ## Peptide Binder De Novo Design
 
 ```bash
-pepldm generate 
+pepldm generate
 ```
 
 ## Datasets
