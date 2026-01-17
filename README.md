@@ -6,6 +6,8 @@ This is the official implementation for the paper titled 'High-PepBinder: A pLM-
 
 ## Setups
 
+- The code is functioning as expected in testing, and the validated version will be updated in the coming days.
+
 ```bash
 git clone git@github.com:mqyii/High-PepBinder.git
 cd High-PepBinder
@@ -15,7 +17,9 @@ pip install .
 ## Peptide Binder De Novo Design
 
 ```bash
-pepldm generate
+pepldm generate --input_path target_sequence.csv \
+    --output_path peptide_generated.csv \
+    --model_path path/to/ckpt
 ```
 
 ## Datasets
