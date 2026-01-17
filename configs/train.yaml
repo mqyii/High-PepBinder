@@ -1,0 +1,54 @@
+name: pepldm
+stage: train
+log_dir: ./logs/${stage}
+seed: 42
+
+is_resume: false
+resume_model_path: null
+is_check_data_module: false
+exit_after_check: true
+is_pretrained: true
+pretrained_model_path: logs/train/pepldm/final/checkpoints/step=74861-val_loss=0.42.ckpt
+
+data_module:
+  train_data_path: akasha/pepldm/peppi_pos_train.csv
+  val_data_path: akasha/pepldm/peppi_pos_val.csv
+  batch_size: 48
+  num_workers: 8
+
+lightning_module:
+  load_from_esmc: false
+  learning_rate: 1e-4
+
+trainer:
+  _target_: lightning.Trainer
+  max_epochs: 20
+  check_val_every_n_epoch: 5
+  log_every_n_steps: 50
+  accelerator: "gpu"
+  devices: [2]
+  strategy: ddp_find_unused_parameters_true
+  precision: bf16-mixed
+  fast_dev_run: false
+  gradient_clip_val: 10.0
+
+  callbacks:
+    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+      filename: "{step}-{val_loss:.2f}"
+      save_top_k: 1
+      monitor: "val_loss"
+      mode: "min"
+      save_last: false
+      save_weights_only: false
+    - _target_: lightning.pytorch.callbacks.LearningRateMonitor
+      logging_interval: "step"
+    - _target_: lightning.pytorch.callbacks.RichProgressBar
+
+  logger:
+    _target_: lightning.pytorch.loggers.CSVLogger
+    save_dir: ${log_dir}
+    name: ${name}
+
+hydra:
+  run:
+    dir: ${log_dir}/${name}

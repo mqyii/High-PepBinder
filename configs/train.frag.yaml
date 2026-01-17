@@ -1,0 +1,54 @@
+name: pepldm
+stage: train
+log_dir: ./logs/${stage}
+seed: 42
+
+is_resume: false
+resume_model_path: null
+is_check_data_module: false
+exit_after_check: true
+is_pretrained: false
+pretrained_model_path: null
+
+data_module:
+  train_data_path: "akasha/PepFragDB-Rosetta/train_score.csv"
+  val_data_path: "akasha/PepFragDB-Rosetta/test_score.csv"
+  batch_size: 48
+  num_workers: 8
+
+lightning_module:
+  load_from_esmc: true
+  learning_rate: 5e-4
+
+trainer:
+  _target_: lightning.Trainer
+  max_epochs: 2
+  val_check_interval: 0.5
+  log_every_n_steps: 100
+  accelerator: "gpu"
+  devices: [3, 4, 5, 6, 7]
+  strategy: ddp_find_unused_parameters_true
+  precision: bf16-mixed
+  fast_dev_run: false
+  gradient_clip_val: 10.0
+
+  callbacks:
+    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+      filename: "{step}-{val_loss:.2f}"
+      save_top_k: 4
+      monitor: "val_loss"
+      mode: "min"
+      save_last: false
+      save_weights_only: false
+    - _target_: lightning.pytorch.callbacks.LearningRateMonitor
+      logging_interval: "step"
+    - _target_: lightning.pytorch.callbacks.RichProgressBar
+
+  logger:
+    _target_: lightning.pytorch.loggers.CSVLogger
+    save_dir: ${log_dir}
+    name: ${name}
+
+hydra:
+  run:
+    dir: ${log_dir}/${name}

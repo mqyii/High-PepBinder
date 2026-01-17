@@ -83,8 +83,6 @@ pyrightconfig.json
 vendor/
 logs/
 tmp/
-datasets/
-notebooks/
 tools
 
 # Akasha

@@ -19,7 +19,9 @@ pip install .
 ```bash
 pepldm generate --input_path target_sequence.csv \
     --output_path peptide_generated.csv \
-    --model_path path/to/ckpt
+    --model_path path/to/ckpt \
+    --seed 42 \
+    --device cuda:0
 ```
 
 ## Datasets
