@@ -1,18 +1,34 @@
 from typing import Optional
 import torch
 from torch.nn import functional as F
+import torch.nn as nn
 from torchmetrics import (
-    MetricCollection,
     MeanMetric,
     Accuracy,
     AUROC,
-    BinaryAveragePrecision,
+    AveragePrecision,
     F1Score,
 )
-from loguru import logger
-from .base import BaseLightningModule
-from .esmc import ESMCModel, ESMCConfig
 
+from loguru import logger
+from tqdm import tqdm
+from .base import BaseLightningModule, MetricCollection
+from .esmc.modeling_esmc import (
+    ESMCModel,
+    ESMCConfig,
+    Pooler,
+    load_weights_from_esm,
+    RegressionHead,
+    ESMCModel,
+)
+from .esmc.configuration_esmc import ESMCConfig
+
+from .tokenizer import ESMSeqTokenizer
+from .utils import FocalLoss
+from .pepldm import PepLDMModel, PepLDMConfig
+
+
+VALID_IDS = set(list(range(4, 24)))
 
 class DiffusionGenerationMixin:
 
@@ -236,6 +252,107 @@ class DiffusionGenerationMixin:
         }
 
 
+class CrossAttentionHead(nn.Module):
+    def __init__(
+        self,
+        hidden_size: int,
+        num_heads: int = 4,
+        num_layers: int = 3,
+        dropout: float = 0.1,
+        activation: str = "relu",
+        pooling_types: list[str] = ["mean"],
+    ):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.pooling_types = pooling_types
+        self.pooler = Pooler(pooling_types=pooling_types)
+
+        # 🔧 动态计算 pooling 后的输出维度
+        pooled_dim = hidden_size * len(pooling_types)
+
+        # Attention encoder
+        self.layers = nn.ModuleList(
+            [
+                nn.ModuleDict(
+                    {
+                        "attn": nn.MultiheadAttention(
+                            embed_dim=hidden_size,
+                            num_heads=num_heads,
+                            dropout=dropout,
+                            batch_first=True,
+                        ),
+                        "norm1": nn.LayerNorm(hidden_size),
+                        "ffn": nn.Sequential(
+                            nn.Linear(hidden_size, hidden_size * 4),
+                            nn.GELU(),
+                            nn.Dropout(dropout),
+                            nn.Linear(hidden_size * 4, hidden_size),
+                            nn.Dropout(dropout),
+                        ),
+                        "norm2": nn.LayerNorm(hidden_size),
+                    }
+                )
+                for _ in range(num_layers)
+            ]
+        )
+
+        # 激活函数
+        if activation == "relu":
+            act = nn.ReLU()
+        elif activation == "tanh":
+            act = nn.Tanh()
+        elif activation == "sigmoid":
+            act = nn.Sigmoid()
+        else:
+            act = nn.GELU()
+        self.act = act
+
+        # ✅ 修正 fc_head 输入维度为 pooled_dim
+        self.fc_head = nn.Sequential(
+            nn.Linear(pooled_dim, pooled_dim // 2),
+            self.act,
+            nn.Dropout(dropout),
+            nn.Linear(pooled_dim // 2, pooled_dim // 4),
+            self.act,
+            nn.Dropout(dropout),
+            nn.Linear(pooled_dim // 4, 1),
+        )
+
+    def forward(
+        self,
+        prot_embeds: torch.Tensor,
+        pep_embeds: torch.Tensor,
+        prot_mask: Optional[torch.Tensor] = None,
+        pep_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        B, Lp, H = prot_embeds.shape
+        B2, Ls, H2 = pep_embeds.shape
+        assert B == B2 and H == H2, "prot/pep batch or hidden mismatch"
+
+        prot_key_padding_mask = None
+        if prot_mask is not None:
+            assert prot_mask.shape == (B, Lp)
+            prot_key_padding_mask = prot_mask == 0
+
+        x = pep_embeds
+        for layer in self.layers:
+            attn_out, _ = layer["attn"](
+                query=x,
+                key=prot_embeds,
+                value=prot_embeds,
+                key_padding_mask=prot_key_padding_mask,
+                need_weights=False,
+            )
+            x = layer["norm1"](x + attn_out)
+            ffn_out = layer["ffn"](x)
+            x = layer["norm2"](x + ffn_out)
+
+        # 用 Pooler 替代手工 mean pooling
+        pooled = self.pooler(x, pep_mask)
+
+        logits = self.fc_head(pooled).squeeze(-1)
+        return logits
+
 class PepLDM2(BaseLightningModule, DiffusionGenerationMixin):
     def __init__(
         self,
@@ -302,7 +419,7 @@ class PepLDM2(BaseLightningModule, DiffusionGenerationMixin):
                 "val_affinity_loss": MeanMetric(sync_on_compute=True),
                 "val_acc": Accuracy(sync_on_compute=True, task="binary"),
                 "val_auc": AUROC(sync_on_compute=True, task="binary"),
-                "val_prauc": BinaryAveragePrecision(sync_on_compute=True),
+                "val_prauc": AveragePrecision(sync_on_compute=True, task="binary"),
                 "val_f1": F1Score(sync_on_compute=True, task="binary"),
             }
         )

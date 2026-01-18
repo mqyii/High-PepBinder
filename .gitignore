@@ -98,3 +98,4 @@ links/
 _build/
 
 .unison
+*.ckpt

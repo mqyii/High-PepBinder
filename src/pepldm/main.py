@@ -4,9 +4,9 @@ import pandas as pd
 from loguru import logger
 from pathlib import Path
 
-from pepldm.utils import PepLDMPipeline
-from pepldm.tokenizer import ESMSeqTokenizer
-from pepldm.lightning import PepLDM2
+from .utils import PepLDMPipeline
+from .tokenizer import ESMSeqTokenizer
+from .lightning import PepLDM2
 
 
 @click.group()

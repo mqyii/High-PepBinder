@@ -6,8 +6,6 @@ This is the official implementation for the paper titled 'High-PepBinder: A pLM-
 
 ## Setups
 
-- The code is functioning as expected in testing, and the validated version will be updated in the coming days.
-
 ```bash
 git clone git@github.com:mqyii/High-PepBinder.git
 cd High-PepBinder
@@ -16,28 +14,36 @@ pip install .
 
 ## Peptide Binder De Novo Design
 
+- The prediction code is tested on GPU A800 with `python==3.12` and `torch==2.7.1+cu126`.
+- The trained model ckpt can be found at [zenodo](https://zenodo.org/records/18282817)
+
 ```bash
 pepldm generate --input_path target_sequence.csv \
     --output_path peptide_generated.csv \
-    --model_path path/to/ckpt \
+    --model_path pepldm_step=882-val_loss=0.51.ckpt \
     --seed 42 \
     --device cuda:0
 ```
 
 ## Datasets
 
-- The XXX dataset can be downloaded at XXX
-- Please place them at XXX
+- The raw PepPBA dataset can be found at `datasets` dir.
 
 ## Training
+
+- see `configs` for details
 
 ```bash
 # pretrain the LDM on FRGDB
 pepldm train frag
+
 # finetuneing on the peptide real 
 pepldm train pep
+
 # trainning the affinity head on XX
+
 pepldm train affinity
+
 # train concistencly 
-pepldm train2 
+pepldm train2
 ```
