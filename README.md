@@ -9,7 +9,9 @@ This is the official implementation for the paper titled 'High-PepBinder: A pLM-
 ```bash
 git clone git@github.com:mqyii/High-PepBinder.git
 cd High-PepBinder
-pip install .
+conda create -n High-PepBinder python=3.12 -y
+conda activate High-PepBinder
+pip install -e .
 ```
 
 ## Peptide Binder De Novo Design
