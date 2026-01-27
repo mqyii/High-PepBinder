@@ -46,13 +46,13 @@ def generate(input_path, output_path, seed, device, model_path):
     pepldm.eval()
 
     pipeline = PepLDMPipeline(
-        model=pepldm, # pepldm
+        model=pepldm,
         tokenizer=tokenizer,
         device=device,
-        num_steps=500, # 1000
-        num_samples=100, # 1000
-        min_seqs=50, # 6000
-        max_tries=3, # 30
+        num_steps=1000,
+        num_samples=1000,
+        min_seqs=3000,
+        max_tries=20,
     )
     df = pd.read_csv(input_path)
     target_list = df["target_sequence"].tolist()
