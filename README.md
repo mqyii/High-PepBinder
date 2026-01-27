@@ -42,7 +42,7 @@ pepldm train frag
 # finetuneing on the peptide real 
 pepldm train pep
 
-# trainning the affinity head on XX
+# trainning the affinity head on PepPBA
 
 pepldm train affinity
 
