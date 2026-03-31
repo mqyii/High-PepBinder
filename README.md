@@ -16,7 +16,7 @@ pip install -e .
 
 ## Peptide Binder De Novo Design
 
-- The prediction code is tested on GPU A800 with `python==3.12` and `torch==2.7.1+cu126`.
+- The prediction code is tested with `python==3.12` and `torch==2.7.1+cu126`.
 - The trained model ckpt can be found at [zenodo](https://zenodo.org/records/18282817)
 
 ```bash
